@@ -21,6 +21,8 @@ CERT=""
 VAFILE=""
 HAPROXY_ADMIN_SOCKET_DEFAULT="/run/haproxy/admin.sock"
 HAPROXY_ADMIN_SOCKET="$HAPROXY_ADMIN_SOCKET_DEFAULT"
+HAPROXY_RELOAD_CMD_DEFAULT="service haproxy reload"
+HAPROXY_RELOAD_CMD="$HAPROXY_RELOAD_CMD_DEFAULT"
 GOOD_ONLY=0
 SYSLOG_PRIO=""
 typeset -i DEBUG=0
@@ -157,6 +159,9 @@ Options:
                          Feel free to implement other mechanisms as 
                          needed! The right section in the code is 
                          \"UPDATE HAPROXY\", at the end of the script.
+
+ -r, --hap-rel-cmd cmd : haproxy reload command. If omitted, $HAPROXY_RELOAD_CMD_DEFAULT
+                         is used by default.
  
  -v, --VAfile file     : same as the openssl ocsp -VAfile option 
                          with 'file' as argument. For more details: 
@@ -261,6 +266,14 @@ do
                 Error 9 "mandatory value is missing for $1 argument"
             fi
             HAPROXY_ADMIN_SOCKET="$2"
+            shift
+            ;;
+
+        -r|--hap-rel-cmd)
+            if [ $# -le 1 ]; then
+                Error 9 "mandatory value is missing for $1 argument"
+            fi
+            HAPROXY_RELOAD_CMD="$2"
             shift
             ;;
 
@@ -515,8 +528,8 @@ if [ "${DEBUG}" -eq 0 ]; then
             # no .ocsp file found, maybe it's an initial run
             Debug "Reloading haproxy."
 
-            if ! service haproxy reload ; then
-                Error 5 "can't reload haproxy with 'service haproxy reload'"
+            if ! $HAPROXY_RELOAD_CMD ; then
+                Error 5 "can't reload haproxy with '$HAPROXY_RELOAD_CMD'"
             fi
         else
             # update haproxy via local UNIX socket
